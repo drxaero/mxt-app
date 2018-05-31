@@ -82,6 +82,7 @@ EXTRA_mxt_app_DEPENDENCIES = git-version
 mxt_app_SOURCES =\
 	src/mxt-app/mxt_app.h \
 	src/mxt-app/mxt_app.c \
+	src/mxt-app/broken_line.c \
 	src/mxt-app/menu.c \
 	src/mxt-app/bootloader.c \
 	src/mxt-app/diagnostic_data.c \

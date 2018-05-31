@@ -245,6 +245,32 @@ deltas. Self capacitance measurements are only available on some devices.
 :   Set *DATATYPE* of the file. This will be automatically detected from the
     file itself in most cases.
 
+# BROKEN LINE DETECTION
+
+The broken line test scans the diagnostic data to identify touch sensor
+defects.
+
+`--broken-line`
+:   Run the broken line detection algorithm on the device
+
+`--dualx`
+: sensor X lines are double connected
+
+`--x-center-threshold N`
+: Set threshold for X lines in center of sensor to N percent
+
+`--x-border-threshold N`
+: Set threshold for X lines at edge of sensor to N percent
+
+`--y-center-threshold N`
+: Set threshold for Y lines in center of sensor to N percent
+
+`--y-border-threshold N`
+: Set threshold for Y lines at edge of sensor to N percent
+
+`--pattern *PATTERN*`
+: set sensor *PATTERN* material to ITO or Xsense
+
 # FINDING AND SPECIFYING DEVICE
 
 By default mxt-app will scan available devices and connect to the first device

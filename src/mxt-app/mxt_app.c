@@ -42,6 +42,7 @@
 #include "libmaxtouch/utilfuncs.h"
 #include "libmaxtouch/info_block.h"
 
+#include "broken_line.h"
 #include "mxt_app.h"
 
 #define BUF_SIZE 1024
@@ -150,6 +151,15 @@ static void print_usage(char *prog_name)
           "  --active-stylus-deltas     : capture active stylus deltas\n"
           "  --active-stylus-refs       : capture active stylus references\n"
           "\n"
+          "Broken line detection commands:\n"
+          "  --broken-line              : run broken line detection\n"
+          "  --dualx                    : X lines are double connected\n"
+          "  --x-center-threshold N     : set X line center threshold to N percent\n"
+          "  --x-border-threshold N     : set X line border threshold to N percent\n"
+          "  --y-center-threshold N     : set Y line center threshold to N percent\n"
+          "  --y-border-threshold N     : set Y line border threshold to N percent\n"
+          "  --pattern PATTERN          : sensor PATTERN (ITO or XSense)\n"
+          "\n"
           "Device connection options:\n"
           "  -q [--query]               : scan for devices\n"
           "  -d [--device] DEVICESTRING : DEVICESTRING as output by --query\n\n"
@@ -192,6 +202,14 @@ int main (int argc, char *argv[])
   unsigned char databuf;
   char strbuf2[BUF_SIZE];
   char strbuf[BUF_SIZE];
+  struct broken_line_options bl_opts = {0};
+  bl_opts.dualx = false;
+  bl_opts.pattern = BROKEN_LINE_PATTERN_ITO;
+  bl_opts.x_center_threshold = BROKEN_LINE_DEFAULT_THRESHOLD;
+  bl_opts.x_border_threshold = BROKEN_LINE_DEFAULT_THRESHOLD;
+  bl_opts.y_center_threshold = BROKEN_LINE_DEFAULT_THRESHOLD;
+  bl_opts.y_border_threshold = BROKEN_LINE_DEFAULT_THRESHOLD;
+
   strbuf[0] = '\0';
   strbuf2[0] = '\0';
   mxt_app_cmd cmd = CMD_NONE;
@@ -221,6 +239,13 @@ int main (int argc, char *argv[])
       {"load",             required_argument, 0, 0},
       {"save",             required_argument, 0, 0},
       {"messages",         optional_argument, 0, 'M'},
+      {"broken-line",      no_argument,       0, 0},
+      {"dualx",            no_argument,       0, 0},
+      {"x-center-threshold",  required_argument, 0,0},
+      {"x-border-threshold",  required_argument, 0,0},
+      {"y-center-threshold",  required_argument, 0,0},
+      {"y-border-threshold",  required_argument, 0,0},
+      {"pattern",          required_argument, 0,  0},
       {"count",            required_argument, 0, 'n'},
       {"port",             required_argument, 0, 'p'},
       {"query",            no_argument,       0, 'q'},
@@ -305,6 +330,51 @@ int main (int argc, char *argv[])
           print_usage(argv[0]);
           return MXT_ERROR_BAD_INPUT;
         }
+      } else if (!strcmp(long_options[option_index].name, "broken-line")) {
+        if (cmd == CMD_NONE) {
+          cmd = CMD_BROKEN_LINE;
+        } else {
+          print_usage(argv[0]);
+          return MXT_ERROR_BAD_INPUT;
+        }
+      } else if (!strcmp(long_options[option_index].name, "dualx")) {
+        bl_opts.dualx = true;
+      } else if (!strcmp(long_options[option_index].name, "x-center-threshold")) {
+        if (optarg) {
+          bl_opts.x_center_threshold = strtol(optarg, NULL, 0);
+        } else {
+          print_usage(argv[0]);
+          return MXT_ERROR_BAD_INPUT;
+        }
+      } else if (!strcmp(long_options[option_index].name, "x-border-threshold")) {
+        if (optarg) {
+          bl_opts.x_border_threshold = strtol(optarg, NULL, 0);
+        } else {
+          print_usage(argv[0]);
+          return MXT_ERROR_BAD_INPUT;
+        }
+      } else if (!strcmp(long_options[option_index].name, "y-center-threshold")) {
+        if (optarg) {
+          bl_opts.y_center_threshold = strtol(optarg, NULL, 0);
+        } else {
+          print_usage(argv[0]);
+          return MXT_ERROR_BAD_INPUT;
+        }
+      } else if (!strcmp(long_options[option_index].name, "y-border-threshold")) {
+        if (optarg) {
+          bl_opts.y_border_threshold = strtol(optarg, NULL, 0);
+        } else {
+          print_usage(argv[0]);
+          return MXT_ERROR_BAD_INPUT;
+        }
+      } else if (!strcmp(long_options[option_index].name, "pattern")) {
+        strncpy(strbuf, optarg, sizeof(strbuf));
+        strbuf[sizeof(strbuf) - 1] = '\0';
+
+        if (!strcasecmp(strbuf, "xsense"))
+          bl_opts.pattern = BROKEN_LINE_PATTERN_XSENSE;
+        else
+          bl_opts.pattern = BROKEN_LINE_PATTERN_ITO;
       } else if (!strcmp(long_options[option_index].name, "reset")) {
         if (cmd == CMD_NONE) {
           cmd = CMD_RESET;
@@ -709,6 +779,11 @@ int main (int argc, char *argv[])
   case CMD_RESET:
     mxt_verb(ctx, "CMD_RESET");
     ret = mxt_reset_chip(mxt, false);
+    break;
+
+  case CMD_BROKEN_LINE:
+    mxt_verb(ctx, "CMD_BROKEN_LINE");
+    ret = mxt_broken_line(mxt, &bl_opts);
     break;
 
   case CMD_RESET_BOOTLOADER:
